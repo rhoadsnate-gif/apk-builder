@@ -19,40 +19,56 @@ jobs:
       - name: Create OrbitPulse App
         run: |
           mkdir -p app/src/main/java/com/orbitpulse/app
-          mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/values
 
           cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
           rootProject.name = "OrbitPulse"
           include ':app'
           EOF
 
           cat > build.gradle <<'EOF'
-          buildscript {
-              repositories { google(); mavenCentral() }
-              dependencies { classpath 'com.android.tools.build:gradle:8.1.0' }
+          plugins {
+              id 'com.android.application' version '8.7.3' apply false
           }
-          allprojects { repositories { google(); mavenCentral() } }
           EOF
 
           cat > app/build.gradle <<'EOF'
-          plugins { id 'com.android.application' }
+          plugins {
+              id 'com.android.application'
+          }
 
           android {
-              compileSdk 34
+              namespace 'com.orbitpulse.app'
+              compileSdk 35
 
               defaultConfig {
-                  applicationId "com.orbitpulse.app"
-                  minSdk 21
-                  targetSdk 34
+                  applicationId 'com.orbitpulse.app'
+                  minSdk 23
+                  targetSdk 35
                   versionCode 1
-                  versionName "1.0"
+                  versionName '1.0'
               }
           }
           EOF
 
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET"/>
+
               <application android:label="OrbitPulse" android:theme="@style/AppTheme">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
@@ -86,8 +102,6 @@ jobs:
                   WebView webView = new WebView(this);
                   webView.getSettings().setJavaScriptEnabled(true);
                   webView.setWebViewClient(new WebViewClient());
-
-                  // This opens your GitHub APK builder directly
                   webView.loadUrl("https://github.com/rhoadsnate-gif/apk-builder/actions");
 
                   setContentView(webView);
@@ -99,10 +113,10 @@ jobs:
         run: |
           curl -s https://get.sdkman.io | bash
           source "$HOME/.sdkman/bin/sdkman-init.sh"
-          sdk install gradle
+          sdk install gradle 8.10.2
 
       - name: Build APK
-        run: gradle :app:assembleDebug
+        run: gradle :app:assembleDebug --no-daemon
 
       - uses: actions/upload-artifact@v4
         with:

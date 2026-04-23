@@ -52,8 +52,8 @@ jobs:
                   applicationId 'com.orbitpulse.app'
                   minSdk 23
                   targetSdk 35
-                  versionCode 2
-                  versionName '1.1'
+                  versionCode 3
+                  versionName '1.2'
               }
           }
           EOF
@@ -91,7 +91,6 @@ jobs:
           import android.graphics.Color;
           import android.content.SharedPreferences;
           import android.view.Gravity;
-          import android.view.View;
           import android.widget.*;
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
@@ -99,7 +98,8 @@ jobs:
           public class MainActivity extends Activity {
               LinearLayout root;
               SharedPreferences prefs;
-              int bg, card, text, accent;
+
+              int bg, text, accent;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
@@ -111,19 +111,17 @@ jobs:
 
               void applyTheme() {
                   String theme = prefs.getString("theme", "dark");
+
                   if (theme.equals("blue")) {
-                      bg = Color.rgb(7, 18, 35);
-                      card = Color.rgb(14, 35, 66);
+                      bg = Color.rgb(8, 18, 38);
                       text = Color.WHITE;
                       accent = Color.rgb(0, 174, 255);
                   } else if (theme.equals("light")) {
                       bg = Color.rgb(245, 245, 245);
-                      card = Color.WHITE;
                       text = Color.rgb(20, 20, 20);
-                      accent = Color.rgb(40, 90, 255);
+                      accent = Color.rgb(50, 100, 255);
                   } else {
-                      bg = Color.rgb(10, 10, 12);
-                      card = Color.rgb(28, 28, 32);
+                      bg = Color.rgb(12, 12, 15);
                       text = Color.WHITE;
                       accent = Color.rgb(0, 220, 140);
                   }
@@ -132,13 +130,29 @@ jobs:
                   getWindow().setNavigationBarColor(bg);
               }
 
-              TextView title(String t, int size) {
+              void baseLayout() {
+                  ScrollView scroll = new ScrollView(this);
+                  scroll.setBackgroundColor(bg);
+
+                  root = new LinearLayout(this);
+                  root.setOrientation(LinearLayout.VERTICAL);
+                  root.setGravity(Gravity.CENTER_HORIZONTAL);
+                  root.setBackgroundColor(bg);
+
+                  // Extra safe space for Samsung status bar and navigation bar
+                  root.setPadding(40, 180, 40, 160);
+
+                  scroll.addView(root);
+                  setContentView(scroll);
+              }
+
+              TextView label(String t, int size) {
                   TextView v = new TextView(this);
                   v.setText(t);
                   v.setTextSize(size);
                   v.setTextColor(text);
                   v.setGravity(Gravity.CENTER);
-                  v.setPadding(20, 20, 20, 20);
+                  v.setPadding(0, 18, 0, 18);
                   return v;
               }
 
@@ -149,44 +163,43 @@ jobs:
                   b.setTextColor(Color.WHITE);
                   b.setBackgroundColor(accent);
                   b.setAllCaps(false);
-                  b.setPadding(20, 20, 20, 20);
-                  return b;
-              }
 
-              void base() {
-                  root = new LinearLayout(this);
-                  root.setOrientation(LinearLayout.VERTICAL);
-                  root.setGravity(Gravity.CENTER_HORIZONTAL);
-                  root.setBackgroundColor(bg);
-                  root.setPadding(32, 60, 32, 60);
-                  setContentView(root);
+                  LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(
+                      LinearLayout.LayoutParams.MATCH_PARENT,
+                      LinearLayout.LayoutParams.WRAP_CONTENT
+                  );
+                  p.setMargins(0, 22, 0, 0);
+                  b.setLayoutParams(p);
+
+                  return b;
               }
 
               void showHome() {
                   applyTheme();
-                  base();
+                  baseLayout();
 
-                  root.addView(title("OrbitPulse Builder", 30));
-                  root.addView(title("Simple APK builder for GitHub", 16));
+                  root.addView(label("OrbitPulse", 34));
+                  root.addView(label("APK Builder", 18));
 
                   Button build = button("Build APK");
-                  Button repos = button("My GitHub Apps");
+                  Button apps = button("My Apps");
                   Button settings = button("Settings & Themes");
 
                   root.addView(build);
-                  root.addView(repos);
+                  root.addView(apps);
                   root.addView(settings);
 
                   build.setOnClickListener(v -> openWeb("https://github.com/rhoadsnate-gif/apk-builder/actions"));
-                  repos.setOnClickListener(v -> openWeb("https://github.com/rhoadsnate-gif?tab=repositories"));
+                  apps.setOnClickListener(v -> openWeb("https://github.com/rhoadsnate-gif?tab=repositories"));
                   settings.setOnClickListener(v -> showSettings());
               }
 
               void showSettings() {
-                  base();
+                  applyTheme();
+                  baseLayout();
 
-                  root.addView(title("Settings", 30));
-                  root.addView(title("OrbitPulse.Studio", 18));
+                  root.addView(label("Settings", 30));
+                  root.addView(label("OrbitPulse.Studio", 18));
 
                   Button dark = button("Dark Theme");
                   Button blue = button("Blue Theme");
@@ -204,19 +217,23 @@ jobs:
                   back.setOnClickListener(v -> showHome());
               }
 
-              void saveTheme(String t) {
-                  prefs.edit().putString("theme", t).apply();
+              void saveTheme(String theme) {
+                  prefs.edit().putString("theme", theme).apply();
                   Toast.makeText(this, "Theme saved", Toast.LENGTH_SHORT).show();
                   showSettings();
               }
 
               void openWeb(String url) {
                   WebView web = new WebView(this);
-                  web.setPadding(0, 40, 0, 40);
                   web.setBackgroundColor(bg);
+
+                  // Extra top/bottom padding so GitHub does not cover Samsung bars
+                  web.setPadding(0, 120, 0, 120);
+
                   web.getSettings().setJavaScriptEnabled(true);
                   web.setWebViewClient(new WebViewClient());
                   web.loadUrl(url);
+
                   setContentView(web);
               }
 

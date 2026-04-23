@@ -1,4 +1,4 @@
-name: Build APK
+name: Build OrbitPulse APK
 
 on:
   workflow_dispatch:
@@ -16,57 +16,44 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Create Android project
+      - name: Create OrbitPulse App
         run: |
-          mkdir -p app/src/main/java/com/example/apkbuilder
+          mkdir -p app/src/main/java/com/orbitpulse/app
+          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/res/values
 
           cat > settings.gradle <<'EOF'
-          pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
-          }
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-          rootProject.name = "APKBuilder"
+          rootProject.name = "OrbitPulse"
           include ':app'
           EOF
 
           cat > build.gradle <<'EOF'
-          plugins {
-              id 'com.android.application' version '8.7.3' apply false
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.1.0' }
           }
+          allprojects { repositories { google(); mavenCentral() } }
           EOF
 
           cat > app/build.gradle <<'EOF'
-          plugins {
-              id 'com.android.application'
-          }
+          plugins { id 'com.android.application' }
 
           android {
-              namespace 'com.example.apkbuilder'
-              compileSdk 35
+              compileSdk 34
 
               defaultConfig {
-                  applicationId 'com.example.apkbuilder'
-                  minSdk 23
-                  targetSdk 35
+                  applicationId "com.orbitpulse.app"
+                  minSdk 21
+                  targetSdk 34
                   versionCode 1
-                  versionName '1.0'
+                  versionName "1.0"
               }
           }
           EOF
 
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <application android:label="APK Builder" android:theme="@style/AppTheme">
+              <application android:label="OrbitPulse" android:theme="@style/AppTheme">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
@@ -77,29 +64,33 @@ jobs:
           </manifest>
           EOF
 
-          mkdir -p app/src/main/res/values
           cat > app/src/main/res/values/styles.xml <<'EOF'
           <resources>
               <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar"/>
           </resources>
           EOF
 
-          cat > app/src/main/java/com/example/apkbuilder/MainActivity.java <<'EOF'
-          package com.example.apkbuilder;
+          cat > app/src/main/java/com/orbitpulse/app/MainActivity.java <<'EOF'
+          package com.orbitpulse.app;
 
           import android.app.Activity;
           import android.os.Bundle;
-          import android.widget.TextView;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
 
           public class MainActivity extends Activity {
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-                  TextView text = new TextView(this);
-                  text.setText("APK Builder is working!");
-                  text.setTextSize(24);
-                  text.setPadding(40, 80, 40, 40);
-                  setContentView(text);
+
+                  WebView webView = new WebView(this);
+                  webView.getSettings().setJavaScriptEnabled(true);
+                  webView.setWebViewClient(new WebViewClient());
+
+                  // This opens your GitHub APK builder directly
+                  webView.loadUrl("https://github.com/rhoadsnate-gif/apk-builder/actions");
+
+                  setContentView(webView);
               }
           }
           EOF
@@ -108,12 +99,12 @@ jobs:
         run: |
           curl -s https://get.sdkman.io | bash
           source "$HOME/.sdkman/bin/sdkman-init.sh"
-          sdk install gradle 8.10.2
+          sdk install gradle
 
       - name: Build APK
         run: gradle :app:assembleDebug
 
       - uses: actions/upload-artifact@v4
         with:
-          name: apk
+          name: orbitpulse-apk
           path: app/build/outputs/apk/debug/*.apk

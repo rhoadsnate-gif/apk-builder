@@ -23,18 +23,11 @@ jobs:
 
           cat > settings.gradle <<'EOF'
           pluginManagement {
-              repositories {
-                  google()
-                  mavenCentral()
-                  gradlePluginPortal()
-              }
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
           }
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories {
-                  google()
-                  mavenCentral()
-              }
+              repositories { google(); mavenCentral() }
           }
           rootProject.name = "OrbitPulse"
           include ':app'
@@ -59,8 +52,8 @@ jobs:
                   applicationId 'com.orbitpulse.app'
                   minSdk 23
                   targetSdk 35
-                  versionCode 1
-                  versionName '1.0'
+                  versionCode 2
+                  versionName '1.1'
               }
           }
           EOF
@@ -69,7 +62,7 @@ jobs:
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET"/>
 
-              <application android:label="OrbitPulse" android:theme="@style/AppTheme">
+              <application android:label="OrbitPulse Builder" android:theme="@style/AppTheme">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
@@ -82,7 +75,11 @@ jobs:
 
           cat > app/src/main/res/values/styles.xml <<'EOF'
           <resources>
-              <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar"/>
+              <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+                  <item name="android:windowLightStatusBar">false</item>
+                  <item name="android:windowLightNavigationBar">false</item>
+                  <item name="android:fontFamily">sans</item>
+              </style>
           </resources>
           EOF
 
@@ -91,20 +88,141 @@ jobs:
 
           import android.app.Activity;
           import android.os.Bundle;
+          import android.graphics.Color;
+          import android.content.SharedPreferences;
+          import android.view.Gravity;
+          import android.view.View;
+          import android.widget.*;
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
 
           public class MainActivity extends Activity {
+              LinearLayout root;
+              SharedPreferences prefs;
+              int bg, card, text, accent;
+
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
+                  prefs = getSharedPreferences("settings", MODE_PRIVATE);
+                  applyTheme();
+                  showHome();
+              }
 
-                  WebView webView = new WebView(this);
-                  webView.getSettings().setJavaScriptEnabled(true);
-                  webView.setWebViewClient(new WebViewClient());
-                  webView.loadUrl("https://github.com/rhoadsnate-gif/apk-builder/actions");
+              void applyTheme() {
+                  String theme = prefs.getString("theme", "dark");
+                  if (theme.equals("blue")) {
+                      bg = Color.rgb(7, 18, 35);
+                      card = Color.rgb(14, 35, 66);
+                      text = Color.WHITE;
+                      accent = Color.rgb(0, 174, 255);
+                  } else if (theme.equals("light")) {
+                      bg = Color.rgb(245, 245, 245);
+                      card = Color.WHITE;
+                      text = Color.rgb(20, 20, 20);
+                      accent = Color.rgb(40, 90, 255);
+                  } else {
+                      bg = Color.rgb(10, 10, 12);
+                      card = Color.rgb(28, 28, 32);
+                      text = Color.WHITE;
+                      accent = Color.rgb(0, 220, 140);
+                  }
 
-                  setContentView(webView);
+                  getWindow().setStatusBarColor(bg);
+                  getWindow().setNavigationBarColor(bg);
+              }
+
+              TextView title(String t, int size) {
+                  TextView v = new TextView(this);
+                  v.setText(t);
+                  v.setTextSize(size);
+                  v.setTextColor(text);
+                  v.setGravity(Gravity.CENTER);
+                  v.setPadding(20, 20, 20, 20);
+                  return v;
+              }
+
+              Button button(String t) {
+                  Button b = new Button(this);
+                  b.setText(t);
+                  b.setTextSize(18);
+                  b.setTextColor(Color.WHITE);
+                  b.setBackgroundColor(accent);
+                  b.setAllCaps(false);
+                  b.setPadding(20, 20, 20, 20);
+                  return b;
+              }
+
+              void base() {
+                  root = new LinearLayout(this);
+                  root.setOrientation(LinearLayout.VERTICAL);
+                  root.setGravity(Gravity.CENTER_HORIZONTAL);
+                  root.setBackgroundColor(bg);
+                  root.setPadding(32, 60, 32, 60);
+                  setContentView(root);
+              }
+
+              void showHome() {
+                  applyTheme();
+                  base();
+
+                  root.addView(title("OrbitPulse Builder", 30));
+                  root.addView(title("Simple APK builder for GitHub", 16));
+
+                  Button build = button("Build APK");
+                  Button repos = button("My GitHub Apps");
+                  Button settings = button("Settings & Themes");
+
+                  root.addView(build);
+                  root.addView(repos);
+                  root.addView(settings);
+
+                  build.setOnClickListener(v -> openWeb("https://github.com/rhoadsnate-gif/apk-builder/actions"));
+                  repos.setOnClickListener(v -> openWeb("https://github.com/rhoadsnate-gif?tab=repositories"));
+                  settings.setOnClickListener(v -> showSettings());
+              }
+
+              void showSettings() {
+                  base();
+
+                  root.addView(title("Settings", 30));
+                  root.addView(title("OrbitPulse.Studio", 18));
+
+                  Button dark = button("Dark Theme");
+                  Button blue = button("Blue Theme");
+                  Button light = button("Light Theme");
+                  Button back = button("Back");
+
+                  root.addView(dark);
+                  root.addView(blue);
+                  root.addView(light);
+                  root.addView(back);
+
+                  dark.setOnClickListener(v -> saveTheme("dark"));
+                  blue.setOnClickListener(v -> saveTheme("blue"));
+                  light.setOnClickListener(v -> saveTheme("light"));
+                  back.setOnClickListener(v -> showHome());
+              }
+
+              void saveTheme(String t) {
+                  prefs.edit().putString("theme", t).apply();
+                  Toast.makeText(this, "Theme saved", Toast.LENGTH_SHORT).show();
+                  showSettings();
+              }
+
+              void openWeb(String url) {
+                  WebView web = new WebView(this);
+                  web.setPadding(0, 40, 0, 40);
+                  web.setBackgroundColor(bg);
+                  web.getSettings().setJavaScriptEnabled(true);
+                  web.setWebViewClient(new WebViewClient());
+                  web.loadUrl(url);
+                  setContentView(web);
+              }
+
+              @Override
+              public void onBackPressed() {
+                  showHome();
               }
           }
           EOF

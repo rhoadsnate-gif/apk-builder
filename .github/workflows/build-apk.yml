@@ -52,8 +52,8 @@ jobs:
                   applicationId 'com.orbitpulse.app'
                   minSdk 23
                   targetSdk 35
-                  versionCode 3
-                  versionName '1.2'
+                  versionCode 4
+                  versionName '1.3'
               }
           }
           EOF
@@ -76,9 +76,10 @@ jobs:
           cat > app/src/main/res/values/styles.xml <<'EOF'
           <resources>
               <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+                  <item name="android:windowNoTitle">true</item>
+                  <item name="android:windowActionBar">false</item>
                   <item name="android:windowLightStatusBar">false</item>
                   <item name="android:windowLightNavigationBar">false</item>
-                  <item name="android:fontFamily">sans</item>
               </style>
           </resources>
           EOF
@@ -91,6 +92,8 @@ jobs:
           import android.graphics.Color;
           import android.content.SharedPreferences;
           import android.view.Gravity;
+          import android.view.Window;
+          import android.view.WindowManager;
           import android.widget.*;
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
@@ -98,12 +101,17 @@ jobs:
           public class MainActivity extends Activity {
               LinearLayout root;
               SharedPreferences prefs;
-
               int bg, text, accent;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
+
+                  Window w = getWindow();
+                  w.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+                  w.setStatusBarColor(Color.rgb(18, 18, 22));
+                  w.setNavigationBarColor(Color.rgb(18, 18, 22));
+
                   prefs = getSharedPreferences("settings", MODE_PRIVATE);
                   applyTheme();
                   showHome();
@@ -139,8 +147,7 @@ jobs:
                   root.setGravity(Gravity.CENTER_HORIZONTAL);
                   root.setBackgroundColor(bg);
 
-                  // Extra safe space for Samsung status bar and navigation bar
-                  root.setPadding(40, 180, 40, 160);
+                  root.setPadding(40, 90, 40, 120);
 
                   scroll.addView(root);
                   setContentView(scroll);
@@ -170,7 +177,6 @@ jobs:
                   );
                   p.setMargins(0, 22, 0, 0);
                   b.setLayoutParams(p);
-
                   return b;
               }
 
@@ -224,17 +230,34 @@ jobs:
               }
 
               void openWeb(String url) {
+                  applyTheme();
+
+                  LinearLayout holder = new LinearLayout(this);
+                  holder.setOrientation(LinearLayout.VERTICAL);
+                  holder.setBackgroundColor(bg);
+
+                  TextView spacerTop = new TextView(this);
+                  spacerTop.setHeight(90);
+                  spacerTop.setBackgroundColor(bg);
+
                   WebView web = new WebView(this);
-                  web.setBackgroundColor(bg);
-
-                  // Extra top/bottom padding so GitHub does not cover Samsung bars
-                  web.setPadding(0, 120, 0, 120);
-
+                  web.setBackgroundColor(Color.WHITE);
                   web.getSettings().setJavaScriptEnabled(true);
+                  web.getSettings().setDomStorageEnabled(true);
                   web.setWebViewClient(new WebViewClient());
                   web.loadUrl(url);
 
-                  setContentView(web);
+                  TextView spacerBottom = new TextView(this);
+                  spacerBottom.setHeight(90);
+                  spacerBottom.setBackgroundColor(bg);
+
+                  holder.addView(spacerTop);
+                  holder.addView(web, new LinearLayout.LayoutParams(
+                      LinearLayout.LayoutParams.MATCH_PARENT, 0, 1
+                  ));
+                  holder.addView(spacerBottom);
+
+                  setContentView(holder);
               }
 
               @Override

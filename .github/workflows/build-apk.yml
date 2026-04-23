@@ -8,47 +8,66 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Create basic Android project
+      - name: Create Android project
         run: |
-          mkdir -p app/src/main/java/com/example/app
-          mkdir -p app/src/main/res/layout
+          mkdir -p app/src/main/java/com/example/apkbuilder
 
-          echo "rootProject.name='app'" > settings.gradle
-
-          cat <<EOF > build.gradle
-          buildscript {
-              repositories { google(); mavenCentral() }
-              dependencies { classpath 'com.android.tools.build:gradle:8.1.0' }
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
           }
-          allprojects { repositories { google(); mavenCentral() } }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "APKBuilder"
+          include ':app'
           EOF
 
-          cat <<EOF > app/build.gradle
-          plugins { id 'com.android.application' }
+          cat > build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.7.3' apply false
+          }
+          EOF
+
+          cat > app/build.gradle <<'EOF'
+          plugins {
+              id 'com.android.application'
+          }
+
           android {
-              compileSdk 34
+              namespace 'com.example.apkbuilder'
+              compileSdk 35
+
               defaultConfig {
-                  applicationId "com.example.app"
-                  minSdk 21
-                  targetSdk 34
+                  applicationId 'com.example.apkbuilder'
+                  minSdk 23
+                  targetSdk 35
                   versionCode 1
-                  versionName "1.0"
+                  versionName '1.0'
               }
           }
           EOF
 
-          cat <<EOF > app/src/main/AndroidManifest.xml
+          cat > app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <application android:label="APK Builder">
-                  <activity android:name=".MainActivity">
+              <application android:label="APK Builder" android:theme="@style/AppTheme">
+                  <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
                           <category android:name="android.intent.category.LAUNCHER"/>
@@ -58,15 +77,29 @@ jobs:
           </manifest>
           EOF
 
-          cat <<EOF > app/src/main/java/com/example/app/MainActivity.kt
-          package com.example.app
+          mkdir -p app/src/main/res/values
+          cat > app/src/main/res/values/styles.xml <<'EOF'
+          <resources>
+              <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar"/>
+          </resources>
+          EOF
 
-          import android.app.Activity
-          import android.os.Bundle
+          cat > app/src/main/java/com/example/apkbuilder/MainActivity.java <<'EOF'
+          package com.example.apkbuilder;
 
-          class MainActivity : Activity() {
-              override fun onCreate(savedInstanceState: Bundle?) {
-                  super.onCreate(savedInstanceState)
+          import android.app.Activity;
+          import android.os.Bundle;
+          import android.widget.TextView;
+
+          public class MainActivity extends Activity {
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  TextView text = new TextView(this);
+                  text.setText("APK Builder is working!");
+                  text.setTextSize(24);
+                  text.setPadding(40, 80, 40, 40);
+                  setContentView(text);
               }
           }
           EOF
@@ -75,7 +108,7 @@ jobs:
         run: |
           curl -s https://get.sdkman.io | bash
           source "$HOME/.sdkman/bin/sdkman-init.sh"
-          sdk install gradle
+          sdk install gradle 8.10.2
 
       - name: Build APK
         run: gradle :app:assembleDebug

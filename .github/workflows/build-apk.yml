@@ -16,7 +16,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Create UnityForge Mobile App
+      - name: Create UnityForge Mobile
         run: |
           mkdir -p app/src/main/java/com/unityforge/mobile
           mkdir -p app/src/main/res/values
@@ -24,9 +24,7 @@ jobs:
           mkdir -p app/src/main/res/mipmap-anydpi-v26
 
           cat > settings.gradle <<'EOF'
-          pluginManagement {
-              repositories { google(); mavenCentral(); gradlePluginPortal() }
-          }
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement {
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories { google(); mavenCentral() }
@@ -36,9 +34,7 @@ jobs:
           EOF
 
           cat > build.gradle <<'EOF'
-          plugins {
-              id 'com.android.application' version '8.7.3' apply false
-          }
+          plugins { id 'com.android.application' version '8.7.3' apply false }
           EOF
 
           cat > app/build.gradle <<'EOF'
@@ -47,15 +43,20 @@ jobs:
           android {
               namespace 'com.unityforge.mobile'
               compileSdk 35
-
               defaultConfig {
                   applicationId 'com.unityforge.mobile'
                   minSdk 23
                   targetSdk 35
-                  versionCode 1
-                  versionName '1.0'
+                  versionCode 2
+                  versionName '1.1'
               }
           }
+          EOF
+
+          cat > app/src/main/res/values/colors.xml <<'EOF'
+          <resources>
+              <color name="icon_bg">#071226</color>
+          </resources>
           EOF
 
           cat > app/src/main/res/values/styles.xml <<'EOF'
@@ -67,23 +68,15 @@ jobs:
           </resources>
           EOF
 
-          cat > app/src/main/res/values/colors.xml <<'EOF'
-          <resources>
-              <color name="icon_bg">#071226</color>
-          </resources>
-          EOF
-
           cat > app/src/main/res/drawable/ic_launcher_foreground.xml <<'EOF'
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
-              android:width="108dp"
-              android:height="108dp"
-              android:viewportWidth="108"
-              android:viewportHeight="108">
+              android:width="108dp" android:height="108dp"
+              android:viewportWidth="108" android:viewportHeight="108">
               <path android:fillColor="#071226" android:pathData="M0,0h108v108h-108z"/>
               <path android:fillColor="#00E08C" android:pathData="M54,14a40,40 0,1 0,0.1,0M54,26a28,28 0,1 1,0,56a28,28 0,0 1,0,-56"/>
               <path android:fillColor="#00AEFF" android:pathData="M54,30l22,14v24l-22,14l-22,-14v-24z"/>
-              <path android:fillColor="#FFFFFF" android:pathData="M44,46h20v8h-20z"/>
-              <path android:fillColor="#FFFFFF" android:pathData="M44,58h20v8h-20z"/>
+              <path android:fillColor="#FFFFFF" android:pathData="M42,47h24v7h-24z"/>
+              <path android:fillColor="#FFFFFF" android:pathData="M42,59h24v7h-24z"/>
           </vector>
           EOF
 
@@ -97,13 +90,11 @@ jobs:
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET"/>
-
               <application
                   android:label="UnityForge"
                   android:icon="@mipmap/ic_launcher"
                   android:roundIcon="@mipmap/ic_launcher"
                   android:theme="@style/AppTheme">
-
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
@@ -133,274 +124,249 @@ jobs:
           public class MainActivity extends Activity {
               LinearLayout root;
               SharedPreferences prefs;
-
-              int bg = Color.rgb(10, 12, 18);
-              int card = Color.rgb(24, 28, 38);
-              int text = Color.WHITE;
-              int accent = Color.rgb(0, 220, 140);
-
-              EditText tokenBox, ownerBox, repoBox, workflowBox, appNameBox, packageBox, themeBox, characterBox, notesBox;
               TextView status;
+              EditText tokenBox, ownerBox, repoBox, workflowBox, gameNameBox, packageBox, characterBox, worldBox, notesBox;
 
-              @Override
-              protected void onCreate(Bundle b) {
+              int bg = Color.rgb(10,12,18);
+              int card = Color.rgb(24,28,38);
+              int text = Color.WHITE;
+              int accent = Color.rgb(0,220,140);
+
+              @Override public void onCreate(Bundle b) {
                   super.onCreate(b);
-                  prefs = getSharedPreferences("unityforge", MODE_PRIVATE);
+                  prefs = getSharedPreferences("uf", MODE_PRIVATE);
                   getWindow().setStatusBarColor(bg);
                   getWindow().setNavigationBarColor(bg);
-                  showHome();
+                  home();
               }
 
               void base() {
-                  ScrollView scroll = new ScrollView(this);
-                  scroll.setBackgroundColor(bg);
-
+                  ScrollView s = new ScrollView(this);
+                  s.setBackgroundColor(bg);
                   root = new LinearLayout(this);
                   root.setOrientation(LinearLayout.VERTICAL);
-                  root.setPadding(36, 120, 36, 150);
+                  root.setPadding(36,120,36,150);
                   root.setBackgroundColor(bg);
-
-                  scroll.addView(root);
-                  setContentView(scroll);
+                  s.addView(root);
+                  setContentView(s);
               }
 
               TextView label(String t, int size) {
                   TextView v = new TextView(this);
                   v.setText(t);
-                  v.setTextColor(text);
                   v.setTextSize(size);
+                  v.setTextColor(text);
                   v.setGravity(Gravity.CENTER);
-                  v.setPadding(0, 12, 0, 12);
+                  v.setPadding(0,12,0,12);
                   return v;
               }
 
-              EditText input(String hint, String value) {
+              EditText input(String hint, String val) {
                   EditText e = new EditText(this);
                   e.setHint(hint);
-                  e.setText(value);
+                  e.setText(val);
                   e.setTextColor(text);
                   e.setHintTextColor(Color.GRAY);
-                  e.setSingleLine(false);
                   e.setBackgroundColor(card);
-                  e.setPadding(20, 20, 20, 20);
-
-                  LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(
-                      LinearLayout.LayoutParams.MATCH_PARENT,
-                      LinearLayout.LayoutParams.WRAP_CONTENT
-                  );
-                  p.setMargins(0, 14, 0, 0);
+                  e.setPadding(20,20,20,20);
+                  e.setSingleLine(false);
+                  LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1,-2);
+                  p.setMargins(0,14,0,0);
                   e.setLayoutParams(p);
                   return e;
               }
 
-              Button button(String t) {
+              Button btn(String t) {
                   Button b = new Button(this);
                   b.setText(t);
                   b.setTextSize(17);
                   b.setTextColor(Color.WHITE);
                   b.setAllCaps(false);
                   b.setBackgroundColor(accent);
-
-                  LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(
-                      LinearLayout.LayoutParams.MATCH_PARENT,
-                      LinearLayout.LayoutParams.WRAP_CONTENT
-                  );
-                  p.setMargins(0, 18, 0, 0);
+                  LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1,-2);
+                  p.setMargins(0,18,0,0);
                   b.setLayoutParams(p);
                   return b;
               }
 
-              void showHome() {
+              void home() {
                   base();
+                  root.addView(label("UnityForge",34));
+                  root.addView(label("Mobile Unity Template Control Panel",15));
 
-                  root.addView(label("UnityForge", 34));
-                  root.addView(label("Mobile Unity Template Editor", 16));
-                  root.addView(label("Edits GitHub Unity repos + triggers APK builds", 13));
-
-                  tokenBox = input("Paste GitHub token here — never share it", prefs.getString("token", ""));
+                  tokenBox = input("GitHub token - paste only inside app", prefs.getString("token",""));
                   tokenBox.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
 
-                  ownerBox = input("GitHub owner", prefs.getString("owner", "rhoadsnate-gif"));
-                  repoBox = input("Unity template repo name", prefs.getString("repo", ""));
-                  workflowBox = input("Build workflow file", prefs.getString("workflow", "build-apk.yml"));
+                  ownerBox = input("GitHub username", prefs.getString("owner","rhoadsnate-gif"));
+                  repoBox = input("Unity game repo name", prefs.getString("repo",""));
+                  workflowBox = input("Unity build workflow file", prefs.getString("workflow","unity-build.yml"));
 
-                  appNameBox = input("Game name", prefs.getString("appName", "My RPG Game"));
-                  packageBox = input("Android package", prefs.getString("package", "com.orbitpulse.rpg"));
-                  themeBox = input("Theme/style", prefs.getString("theme", "dark fantasy"));
-                  characterBox = input("Main character", prefs.getString("character", "male knight"));
-                  notesBox = input("Extra changes", prefs.getString("notes", "Replace starter character. Add mobile joystick. Add attack button."));
+                  gameNameBox = input("Game name", prefs.getString("game","My RPG Game"));
+                  packageBox = input("Package name", prefs.getString("pkg","com.orbitpulse.rpg"));
+                  characterBox = input("Character style", prefs.getString("character","male warrior"));
+                  worldBox = input("World style", prefs.getString("world","viking fantasy village"));
+                  notesBox = input("Extra changes", prefs.getString("notes","Add mobile joystick, attack button, OrbitPulse branding, Android safe area."));
 
-                  Button save = button("Save Settings");
-                  Button config = button("Create / Update Unity Config");
-                  Button build = button("Build APK");
-                  Button openRepo = button("Open Repo");
-                  Button openActions = button("Open Builds");
-                  Button help = button("What This Needs");
+                  Button save = btn("Save");
+                  Button check = btn("Load / Check Unity Template");
+                  Button config = btn("Create Game Config");
+                  Button build = btn("Build APK");
+                  Button repo = btn("Open GitHub Repo");
+                  Button actions = btn("Open APK Builds");
+                  Button upload = btn("Upload Files Page");
+                  Button help = btn("Instructions");
 
-                  status = label("Ready", 14);
+                  status = label("Ready",14);
 
                   root.addView(save);
+                  root.addView(check);
                   root.addView(config);
                   root.addView(build);
-                  root.addView(openRepo);
-                  root.addView(openActions);
+                  root.addView(repo);
+                  root.addView(actions);
+                  root.addView(upload);
                   root.addView(help);
                   root.addView(status);
 
-                  save.setOnClickListener(v -> saveSettings());
-                  config.setOnClickListener(v -> updateUnityConfig());
+                  save.setOnClickListener(v -> save());
+                  check.setOnClickListener(v -> checkUnityProject());
+                  config.setOnClickListener(v -> updateConfig());
                   build.setOnClickListener(v -> triggerBuild());
-                  openRepo.setOnClickListener(v -> open("https://github.com/" + owner() + "/" + repo()));
-                  openActions.setOnClickListener(v -> open("https://github.com/" + owner() + "/" + repo() + "/actions"));
-                  help.setOnClickListener(v -> showHelp());
+                  repo.setOnClickListener(v -> open("https://github.com/"+owner()+"/"+repo()));
+                  actions.setOnClickListener(v -> open("https://github.com/"+owner()+"/"+repo()+"/actions"));
+                  upload.setOnClickListener(v -> open("https://github.com/"+owner()+"/"+repo()+"/upload/main"));
+                  help.setOnClickListener(v -> help());
               }
 
-              void showHelp() {
+              void help() {
                   base();
-                  root.addView(label("Important", 30));
-                  root.addView(label("This app edits Unity templates through GitHub.", 16));
-                  root.addView(label("For it to work best, your Unity project should contain:", 15));
-                  root.addView(label("1. Assets/\n2. Packages/\n3. ProjectSettings/\n4. A GitHub build workflow\n5. Optional: .orbitforge/config.json support", 15));
-
-                  root.addView(label("This does not replace Unity Editor yet. It controls template settings and build commands from your phone.", 14));
-
-                  Button back = button("Back");
+                  root.addView(label("How It Works",30));
+                  root.addView(label("1. Upload Unity project to GitHub\n2. Open UnityForge\n3. Enter repo name\n4. Tap Load / Check\n5. Tap Create Game Config\n6. Tap Build APK",16));
+                  root.addView(label("A real Unity project must include:\nAssets/\nPackages/\nProjectSettings/",15));
+                  root.addView(label("This app edits files and starts builds. It does not replace the full Unity Editor.",14));
+                  Button back = btn("Back");
                   root.addView(back);
-                  back.setOnClickListener(v -> showHome());
+                  back.setOnClickListener(v -> home());
               }
 
-              void saveSettings() {
+              void save() {
                   prefs.edit()
                       .putString("token", tokenBox.getText().toString().trim())
                       .putString("owner", ownerBox.getText().toString().trim())
                       .putString("repo", repoBox.getText().toString().trim())
                       .putString("workflow", workflowBox.getText().toString().trim())
-                      .putString("appName", appNameBox.getText().toString().trim())
-                      .putString("package", packageBox.getText().toString().trim())
-                      .putString("theme", themeBox.getText().toString().trim())
+                      .putString("game", gameNameBox.getText().toString().trim())
+                      .putString("pkg", packageBox.getText().toString().trim())
                       .putString("character", characterBox.getText().toString().trim())
+                      .putString("world", worldBox.getText().toString().trim())
                       .putString("notes", notesBox.getText().toString().trim())
                       .apply();
-
                   toast("Saved");
               }
 
-              String token() { return tokenBox.getText().toString().trim(); }
-              String owner() { return ownerBox.getText().toString().trim(); }
-              String repo() { return repoBox.getText().toString().trim(); }
-              String workflow() { return workflowBox.getText().toString().trim(); }
+              String token(){return tokenBox.getText().toString().trim();}
+              String owner(){return ownerBox.getText().toString().trim();}
+              String repo(){return repoBox.getText().toString().trim();}
+              String workflow(){return workflowBox.getText().toString().trim();}
+
+              void checkUnityProject() {
+                  save();
+                  setStatus("Checking Unity project...");
+                  new Thread(() -> {
+                      try {
+                          boolean assets = exists("Assets");
+                          boolean packages = exists("Packages");
+                          boolean settings = exists("ProjectSettings");
+                          if (assets && packages && settings) ok("Unity template loaded: Assets, Packages, ProjectSettings found.");
+                          else fail("Missing Unity folders. Need Assets, Packages, ProjectSettings.");
+                      } catch(Exception e){ fail(e.getMessage()); }
+                  }).start();
+              }
+
+              boolean exists(String path) throws Exception {
+                  String url = "https://api.github.com/repos/"+owner()+"/"+repo()+"/contents/"+path;
+                  HttpURLConnection c = conn(url,"GET");
+                  return c.getResponseCode()==200;
+              }
 
               JSONObject configJson() throws Exception {
                   JSONObject j = new JSONObject();
-                  j.put("appName", appNameBox.getText().toString().trim());
+                  j.put("gameName", gameNameBox.getText().toString().trim());
                   j.put("packageName", packageBox.getText().toString().trim());
-                  j.put("theme", themeBox.getText().toString().trim());
-                  j.put("mainCharacter", characterBox.getText().toString().trim());
+                  j.put("character", characterBox.getText().toString().trim());
+                  j.put("world", worldBox.getText().toString().trim());
                   j.put("notes", notesBox.getText().toString().trim());
-                  j.put("mobileControls", true);
+                  j.put("mobileJoystick", true);
+                  j.put("attackButton", true);
                   j.put("androidSafeArea", true);
                   j.put("orbitpulseBranding", true);
                   return j;
               }
 
-              void updateUnityConfig() {
-                  saveSettings();
-                  setStatus("Updating Unity config...");
-
+              void updateConfig() {
+                  save();
+                  setStatus("Creating .orbitforge/config.json...");
                   new Thread(() -> {
                       try {
                           String path = ".orbitforge/config.json";
-                          String apiPath = path.replace("/", "%2F");
-                          String url = "https://api.github.com/repos/" + owner() + "/" + repo() + "/contents/" + apiPath;
-
+                          String api = "https://api.github.com/repos/"+owner()+"/"+repo()+"/contents/.orbitforge%2Fconfig.json";
                           String sha = null;
-                          HttpURLConnection get = conn(url, "GET");
-                          int code = get.getResponseCode();
 
-                          if (code == 200) {
+                          HttpURLConnection get = conn(api,"GET");
+                          if (get.getResponseCode()==200) {
                               JSONObject old = new JSONObject(read(get.getInputStream()));
-                              sha = old.optString("sha", null);
+                              sha = old.optString("sha",null);
                           }
 
                           JSONObject body = new JSONObject();
-                          body.put("message", "Update OrbitForge Unity config");
-                          body.put("content", Base64.encodeToString(
-                              configJson().toString(2).getBytes("UTF-8"),
-                              Base64.NO_WRAP
-                          ));
+                          body.put("message","Update UnityForge config");
+                          body.put("content", Base64.encodeToString(configJson().toString(2).getBytes("UTF-8"), Base64.NO_WRAP));
+                          if (sha != null) body.put("sha", sha);
 
-                          if (sha != null && sha.length() > 0) body.put("sha", sha);
-
-                          HttpURLConnection put = conn(url, "PUT");
+                          HttpURLConnection put = conn(api,"PUT");
                           write(put, body.toString());
 
-                          int putCode = put.getResponseCode();
-
-                          if (putCode == 200 || putCode == 201) {
-                              ok("Config updated in GitHub.");
-                          } else {
-                              fail("Config failed: " + putCode + " " + readError(put));
-                          }
-                      } catch (Exception e) {
-                          fail(e.getMessage());
-                      }
+                          int code = put.getResponseCode();
+                          if (code==200 || code==201) ok("Game config saved to GitHub.");
+                          else fail("Config error "+code+": "+readError(put));
+                      } catch(Exception e){ fail(e.getMessage()); }
                   }).start();
               }
 
               void triggerBuild() {
-                  saveSettings();
-                  setStatus("Starting GitHub build...");
-
+                  save();
+                  setStatus("Starting APK build...");
                   new Thread(() -> {
                       try {
-                          String url = "https://api.github.com/repos/" + owner() + "/" + repo() +
-                              "/actions/workflows/" + workflow() + "/dispatches";
-
+                          String url = "https://api.github.com/repos/"+owner()+"/"+repo()+"/actions/workflows/"+workflow()+"/dispatches";
                           JSONObject body = new JSONObject();
-                          body.put("ref", "main");
-
-                          JSONObject inputs = new JSONObject();
-                          inputs.put("appName", appNameBox.getText().toString().trim());
-                          inputs.put("packageName", packageBox.getText().toString().trim());
-                          inputs.put("theme", themeBox.getText().toString().trim());
-                          inputs.put("character", characterBox.getText().toString().trim());
-                          body.put("inputs", inputs);
-
-                          HttpURLConnection post = conn(url, "POST");
+                          body.put("ref","main");
+                          HttpURLConnection post = conn(url,"POST");
                           write(post, body.toString());
-
                           int code = post.getResponseCode();
-
-                          if (code == 204) {
-                              ok("Build started. Open Builds to download APK.");
-                          } else {
-                              fail("Build failed to start: " + code + " " + readError(post));
-                          }
-                      } catch (Exception e) {
-                          fail(e.getMessage());
-                      }
+                          if (code==204) ok("Build started. Open APK Builds.");
+                          else fail("Build start error "+code+": "+readError(post));
+                      } catch(Exception e){ fail(e.getMessage()); }
                   }).start();
               }
 
-              HttpURLConnection conn(String u, String method) throws Exception {
+              HttpURLConnection conn(String u, String m) throws Exception {
                   URL url = new URL(u);
-                  HttpURLConnection c = (HttpURLConnection) url.openConnection();
-                  c.setRequestMethod(method);
-                  c.setRequestProperty("Accept", "application/vnd.github+json");
-                  c.setRequestProperty("X-GitHub-Api-Version", "2022-11-28");
-                  c.setRequestProperty("Authorization", "Bearer " + token());
-
-                  if (method.equals("POST") || method.equals("PUT")) {
+                  HttpURLConnection c = (HttpURLConnection)url.openConnection();
+                  c.setRequestMethod(m);
+                  c.setRequestProperty("Accept","application/vnd.github+json");
+                  c.setRequestProperty("Authorization","Bearer "+token());
+                  c.setRequestProperty("X-GitHub-Api-Version","2022-11-28");
+                  if (m.equals("POST") || m.equals("PUT")) {
                       c.setDoOutput(true);
-                      c.setRequestProperty("Content-Type", "application/json");
+                      c.setRequestProperty("Content-Type","application/json");
                   }
-
                   return c;
               }
 
-              void write(HttpURLConnection c, String data) throws Exception {
+              void write(HttpURLConnection c, String d) throws Exception {
                   OutputStream os = c.getOutputStream();
-                  os.write(data.getBytes("UTF-8"));
+                  os.write(d.getBytes("UTF-8"));
                   os.close();
               }
 
@@ -408,50 +374,20 @@ jobs:
                   BufferedReader br = new BufferedReader(new InputStreamReader(is));
                   StringBuilder sb = new StringBuilder();
                   String line;
-                  while ((line = br.readLine()) != null) sb.append(line).append("\n");
+                  while((line=br.readLine())!=null) sb.append(line).append("\n");
                   return sb.toString();
               }
 
               String readError(HttpURLConnection c) {
-                  try {
-                      InputStream es = c.getErrorStream();
-                      if (es == null) return "";
-                      return read(es);
-                  } catch (Exception e) {
-                      return "";
-                  }
+                  try { return read(c.getErrorStream()); } catch(Exception e){ return ""; }
               }
 
-              void setStatus(String s) {
-                  runOnUiThread(() -> status.setText(s));
-              }
-
-              void ok(String s) {
-                  runOnUiThread(() -> {
-                      status.setText(s);
-                      toast(s);
-                  });
-              }
-
-              void fail(String s) {
-                  runOnUiThread(() -> {
-                      status.setText("Error: " + s);
-                      toast("Error");
-                  });
-              }
-
-              void toast(String s) {
-                  Toast.makeText(this, s, Toast.LENGTH_LONG).show();
-              }
-
-              void open(String url) {
-                  startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-              }
-
-              @Override
-              public void onBackPressed() {
-                  showHome();
-              }
+              void setStatus(String s){ runOnUiThread(() -> status.setText(s)); }
+              void ok(String s){ runOnUiThread(() -> { status.setText(s); toast(s); }); }
+              void fail(String s){ runOnUiThread(() -> { status.setText("Error: "+s); toast("Error"); }); }
+              void toast(String s){ Toast.makeText(this,s,Toast.LENGTH_LONG).show(); }
+              void open(String url){ startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }
+              @Override public void onBackPressed(){ home(); }
           }
           EOF
 

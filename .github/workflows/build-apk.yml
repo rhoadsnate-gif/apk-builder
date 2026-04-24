@@ -1,4 +1,4 @@
-name: Build OrbitPulse APK
+name: Build OrbitForge APK
 
 on:
   workflow_dispatch:
@@ -16,10 +16,12 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Create OrbitPulse App
+      - name: Create OrbitForge App
         run: |
-          mkdir -p app/src/main/java/com/orbitpulse/app
+          mkdir -p app/src/main/java/com/orbitforge/app
           mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/res/drawable
+          mkdir -p app/src/main/res/mipmap-anydpi-v26
 
           cat > settings.gradle <<'EOF'
           pluginManagement {
@@ -29,7 +31,7 @@ jobs:
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories { google(); mavenCentral() }
           }
-          rootProject.name = "OrbitPulse"
+          rootProject.name = "OrbitForge"
           include ':app'
           EOF
 
@@ -40,29 +42,70 @@ jobs:
           EOF
 
           cat > app/build.gradle <<'EOF'
-          plugins {
-              id 'com.android.application'
-          }
+          plugins { id 'com.android.application' }
 
           android {
-              namespace 'com.orbitpulse.app'
+              namespace 'com.orbitforge.app'
               compileSdk 35
 
               defaultConfig {
-                  applicationId 'com.orbitpulse.app'
+                  applicationId 'com.orbitforge.app'
                   minSdk 23
                   targetSdk 35
-                  versionCode 4
-                  versionName '1.3'
+                  versionCode 1
+                  versionName '1.0'
               }
           }
+          EOF
+
+          cat > app/src/main/res/values/styles.xml <<'EOF'
+          <resources>
+              <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+                  <item name="android:windowLightStatusBar">false</item>
+                  <item name="android:windowLightNavigationBar">false</item>
+              </style>
+          </resources>
+          EOF
+
+          cat > app/src/main/res/values/colors.xml <<'EOF'
+          <resources>
+              <color name="icon_bg">#081226</color>
+          </resources>
+          EOF
+
+          cat > app/src/main/res/drawable/ic_launcher_foreground.xml <<'EOF'
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="108dp"
+              android:height="108dp"
+              android:viewportWidth="108"
+              android:viewportHeight="108">
+
+              <path android:fillColor="#081226" android:pathData="M0,0h108v108h-108z"/>
+              <path android:fillColor="#00E08C" android:pathData="M54,16a38,38 0,1 0,0.1,0M54,27a27,27 0,1 1,0,54a27,27 0,0 1,0,-54"/>
+              <path android:fillColor="#00AEFF" android:pathData="M54,34l16,10v20l-16,10l-16,-10v-20z"/>
+              <path android:fillColor="#FFFFFF" android:pathData="M49,44h10v10h-10z"/>
+              <path android:fillColor="#FFFFFF" android:pathData="M38,66h8v12h-8z"/>
+              <path android:fillColor="#FFFFFF" android:pathData="M62,66h8v12h-8z"/>
+          </vector>
+          EOF
+
+          cat > app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml <<'EOF'
+          <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@color/icon_bg"/>
+              <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+          </adaptive-icon>
           EOF
 
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET"/>
 
-              <application android:label="OrbitPulse Builder" android:theme="@style/AppTheme">
+              <application
+                  android:label="OrbitForge"
+                  android:icon="@mipmap/ic_launcher"
+                  android:roundIcon="@mipmap/ic_launcher"
+                  android:theme="@style/AppTheme">
+
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
@@ -73,30 +116,17 @@ jobs:
           </manifest>
           EOF
 
-          cat > app/src/main/res/values/styles.xml <<'EOF'
-          <resources>
-              <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
-                  <item name="android:windowNoTitle">true</item>
-                  <item name="android:windowActionBar">false</item>
-                  <item name="android:windowLightStatusBar">false</item>
-                  <item name="android:windowLightNavigationBar">false</item>
-              </style>
-          </resources>
-          EOF
-
-          cat > app/src/main/java/com/orbitpulse/app/MainActivity.java <<'EOF'
-          package com.orbitpulse.app;
+          cat > app/src/main/java/com/orbitforge/app/MainActivity.java <<'EOF'
+          package com.orbitforge.app;
 
           import android.app.Activity;
           import android.os.Bundle;
           import android.graphics.Color;
+          import android.content.Intent;
           import android.content.SharedPreferences;
+          import android.net.Uri;
           import android.view.Gravity;
-          import android.view.Window;
-          import android.view.WindowManager;
           import android.widget.*;
-          import android.webkit.WebView;
-          import android.webkit.WebViewClient;
 
           public class MainActivity extends Activity {
               LinearLayout root;
@@ -106,12 +136,6 @@ jobs:
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-
-                  Window w = getWindow();
-                  w.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-                  w.setStatusBarColor(Color.rgb(18, 18, 22));
-                  w.setNavigationBarColor(Color.rgb(18, 18, 22));
-
                   prefs = getSharedPreferences("settings", MODE_PRIVATE);
                   applyTheme();
                   showHome();
@@ -146,8 +170,7 @@ jobs:
                   root.setOrientation(LinearLayout.VERTICAL);
                   root.setGravity(Gravity.CENTER_HORIZONTAL);
                   root.setBackgroundColor(bg);
-
-                  root.setPadding(40, 90, 40, 120);
+                  root.setPadding(40, 130, 40, 150);
 
                   scroll.addView(root);
                   setContentView(scroll);
@@ -184,19 +207,23 @@ jobs:
                   applyTheme();
                   baseLayout();
 
-                  root.addView(label("OrbitPulse", 34));
-                  root.addView(label("APK Builder", 18));
+                  root.addView(label("OrbitForge", 34));
+                  root.addView(label("APK Builder by OrbitPulse.Studio", 16));
+                  root.addView(label("Simple. Safe. GitHub powered.", 14));
 
                   Button build = button("Build APK");
                   Button apps = button("My Apps");
+                  Button github = button("Open GitHub");
                   Button settings = button("Settings & Themes");
 
                   root.addView(build);
                   root.addView(apps);
+                  root.addView(github);
                   root.addView(settings);
 
-                  build.setOnClickListener(v -> openWeb("https://github.com/rhoadsnate-gif/apk-builder/actions"));
-                  apps.setOnClickListener(v -> openWeb("https://github.com/rhoadsnate-gif?tab=repositories"));
+                  build.setOnClickListener(v -> openBrowser("https://github.com/rhoadsnate-gif/apk-builder/actions"));
+                  apps.setOnClickListener(v -> openBrowser("https://github.com/rhoadsnate-gif?tab=repositories"));
+                  github.setOnClickListener(v -> openBrowser("https://github.com"));
                   settings.setOnClickListener(v -> showSettings());
               }
 
@@ -229,35 +256,9 @@ jobs:
                   showSettings();
               }
 
-              void openWeb(String url) {
-                  applyTheme();
-
-                  LinearLayout holder = new LinearLayout(this);
-                  holder.setOrientation(LinearLayout.VERTICAL);
-                  holder.setBackgroundColor(bg);
-
-                  TextView spacerTop = new TextView(this);
-                  spacerTop.setHeight(90);
-                  spacerTop.setBackgroundColor(bg);
-
-                  WebView web = new WebView(this);
-                  web.setBackgroundColor(Color.WHITE);
-                  web.getSettings().setJavaScriptEnabled(true);
-                  web.getSettings().setDomStorageEnabled(true);
-                  web.setWebViewClient(new WebViewClient());
-                  web.loadUrl(url);
-
-                  TextView spacerBottom = new TextView(this);
-                  spacerBottom.setHeight(90);
-                  spacerBottom.setBackgroundColor(bg);
-
-                  holder.addView(spacerTop);
-                  holder.addView(web, new LinearLayout.LayoutParams(
-                      LinearLayout.LayoutParams.MATCH_PARENT, 0, 1
-                  ));
-                  holder.addView(spacerBottom);
-
-                  setContentView(holder);
+              void openBrowser(String url) {
+                  Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                  startActivity(intent);
               }
 
               @Override
@@ -278,5 +279,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: orbitpulse-apk
+          name: orbitforge-apk
           path: app/build/outputs/apk/debug/*.apk

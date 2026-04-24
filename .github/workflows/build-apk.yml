@@ -47,8 +47,8 @@ jobs:
                   applicationId 'com.unityforge.rpgstudio'
                   minSdk 26
                   targetSdk 35
-                  versionCode 2
-                  versionName '1.1'
+                  versionCode 3
+                  versionName '1.2'
               }
           }
           EOF
@@ -88,6 +88,12 @@ jobs:
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET"/>
+              <queries>
+                  <package android:name="com.shadow.tech"/>
+                  <package android:name="com.blade.shadow.cloudgaming"/>
+                  <package android:name="com.blade.shadow"/>
+              </queries>
+
               <application
                   android:label="UnityForge RPG"
                   android:icon="@mipmap/ic_launcher"
@@ -124,7 +130,11 @@ jobs:
               int text = Color.WHITE;
               int accent = Color.rgb(0,220,140);
 
-              String shadowPackage = "com.blade.shadow.cloudgaming";
+              String[] shadowPackages = {
+                  "com.shadow.tech",
+                  "com.blade.shadow.cloudgaming",
+                  "com.blade.shadow"
+              };
 
               EditText repoBox, unityBox, rpgKitBox, worldPackBox, notesBox, gameNameBox, packageBox;
 
@@ -199,13 +209,13 @@ jobs:
 
               void showHome() {
                   base();
-                  boolean shadowInstalled = isInstalled(shadowPackage);
+                  String installedShadow = getInstalledShadowPackage();
 
                   root.addView(label("UnityForge RPG",34));
                   root.addView(label("Phone command center for 3D RPG games",15));
 
-                  if (shadowInstalled) {
-                      root.addView(box("✅ Shadow PC detected.\nYou can run Unity from your phone using Shadow."));
+                  if (installedShadow != null) {
+                      root.addView(box("✅ Shadow PC detected.\nPackage found:\n" + installedShadow + "\n\nYou can run Unity from your phone using Shadow."));
                   } else {
                       root.addView(box("❌ Shadow PC not detected.\nInstall Shadow PC first so Unity can run on a cloud Windows PC."));
                   }
@@ -283,7 +293,7 @@ jobs:
                   root.addView(box("7. Replace the girl character.\n\nUse a male warrior / Viking character."));
                   root.addView(box("8. Add Android mobile controls.\n\nJoystick, attack button, jump button, camera drag."));
                   root.addView(box("9. Save project to GitHub.\n\nUse your repo from Project Setup."));
-                  root.addView(box("10. Build APK.\n\nUse Unity Build Settings or GitHub Actions."));
+                  root.addView(box("10. Build APK.\n\nUse Unity Android Build Settings or GitHub Actions."));
                   root.addView(box("11. Download APK to your phone.\n\nInstall and test."));
                   root.addView(box("12. Fix, rebuild, test again.\n\nThis is how real games get made."));
 
@@ -413,6 +423,13 @@ jobs:
                   back.setOnClickListener(v -> showHome());
               }
 
+              String getInstalledShadowPackage() {
+                  for (String p : shadowPackages) {
+                      if (isInstalled(p)) return p;
+                  }
+                  return null;
+              }
+
               boolean isInstalled(String packageName) {
                   try {
                       getPackageManager().getPackageInfo(packageName, 0);
@@ -423,10 +440,15 @@ jobs:
               }
 
               void openShadow() {
-                  if (isInstalled(shadowPackage)) {
-                      Intent launch = getPackageManager().getLaunchIntentForPackage(shadowPackage);
-                      if (launch != null) startActivity(launch);
-                      else open("https://shadow.tech/download");
+                  String installed = getInstalledShadowPackage();
+
+                  if (installed != null) {
+                      Intent launch = getPackageManager().getLaunchIntentForPackage(installed);
+                      if (launch != null) {
+                          startActivity(launch);
+                      } else {
+                          open("https://shadow.tech/download");
+                      }
                   } else {
                       open("https://play.google.com/store/search?q=Shadow%20PC&c=apps");
                   }

@@ -1,4 +1,4 @@
-name: Build UnityForge Mobile APK
+name: Build UnityForge RPG Studio APK
 
 on:
   workflow_dispatch:
@@ -16,9 +16,9 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Create UnityForge Mobile
+      - name: Create UnityForge RPG Studio
         run: |
-          mkdir -p app/src/main/java/com/unityforge/mobile
+          mkdir -p app/src/main/java/com/unityforge/rpgstudio
           mkdir -p app/src/main/res/values
           mkdir -p app/src/main/res/drawable
           mkdir -p app/src/main/res/mipmap-anydpi-v26
@@ -29,7 +29,7 @@ jobs:
               repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
               repositories { google(); mavenCentral() }
           }
-          rootProject.name = "UnityForgeMobile"
+          rootProject.name = "UnityForgeRPGStudio"
           include ':app'
           EOF
 
@@ -41,11 +41,11 @@ jobs:
           plugins { id 'com.android.application' }
 
           android {
-              namespace 'com.unityforge.mobile'
+              namespace 'com.unityforge.rpgstudio'
               compileSdk 35
               defaultConfig {
-                  applicationId 'com.unityforge.mobile'
-                  minSdk 23
+                  applicationId 'com.unityforge.rpgstudio'
+                  minSdk 26
                   targetSdk 35
                   versionCode 2
                   versionName '1.1'
@@ -54,9 +54,7 @@ jobs:
           EOF
 
           cat > app/src/main/res/values/colors.xml <<'EOF'
-          <resources>
-              <color name="icon_bg">#071226</color>
-          </resources>
+          <resources><color name="icon_bg">#071226</color></resources>
           EOF
 
           cat > app/src/main/res/values/styles.xml <<'EOF'
@@ -73,10 +71,10 @@ jobs:
               android:width="108dp" android:height="108dp"
               android:viewportWidth="108" android:viewportHeight="108">
               <path android:fillColor="#071226" android:pathData="M0,0h108v108h-108z"/>
-              <path android:fillColor="#00E08C" android:pathData="M54,14a40,40 0,1 0,0.1,0M54,26a28,28 0,1 1,0,56a28,28 0,0 1,0,-56"/>
-              <path android:fillColor="#00AEFF" android:pathData="M54,30l22,14v24l-22,14l-22,-14v-24z"/>
-              <path android:fillColor="#FFFFFF" android:pathData="M42,47h24v7h-24z"/>
-              <path android:fillColor="#FFFFFF" android:pathData="M42,59h24v7h-24z"/>
+              <path android:fillColor="#00E08C" android:pathData="M54,13a41,41 0,1 0,0.1,0M54,26a28,28 0,1 1,0,56a28,28 0,0 1,0,-56"/>
+              <path android:fillColor="#00AEFF" android:pathData="M54,30l24,15v26l-24,15l-24,-15v-26z"/>
+              <path android:fillColor="#FFFFFF" android:pathData="M40,46h28v8h-28z"/>
+              <path android:fillColor="#FFFFFF" android:pathData="M40,59h28v8h-28z"/>
           </vector>
           EOF
 
@@ -91,7 +89,7 @@ jobs:
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET"/>
               <application
-                  android:label="UnityForge"
+                  android:label="UnityForge RPG"
                   android:icon="@mipmap/ic_launcher"
                   android:roundIcon="@mipmap/ic_launcher"
                   android:theme="@style/AppTheme">
@@ -105,50 +103,49 @@ jobs:
           </manifest>
           EOF
 
-          cat > app/src/main/java/com/unityforge/mobile/MainActivity.java <<'EOF'
-          package com.unityforge.mobile;
+          cat > app/src/main/java/com/unityforge/rpgstudio/MainActivity.java <<'EOF'
+          package com.unityforge.rpgstudio;
 
           import android.app.Activity;
           import android.os.Bundle;
-          import android.graphics.Color;
           import android.content.*;
+          import android.content.pm.PackageManager;
+          import android.graphics.Color;
           import android.net.Uri;
-          import android.text.InputType;
-          import android.util.Base64;
           import android.view.Gravity;
           import android.widget.*;
-          import org.json.*;
-          import java.io.*;
-          import java.net.*;
 
           public class MainActivity extends Activity {
               LinearLayout root;
               SharedPreferences prefs;
-              TextView status;
-              EditText tokenBox, ownerBox, repoBox, workflowBox, gameNameBox, packageBox, characterBox, worldBox, notesBox;
 
               int bg = Color.rgb(10,12,18);
               int card = Color.rgb(24,28,38);
               int text = Color.WHITE;
               int accent = Color.rgb(0,220,140);
 
-              @Override public void onCreate(Bundle b) {
+              String shadowPackage = "com.blade.shadow.cloudgaming";
+
+              EditText repoBox, unityBox, rpgKitBox, worldPackBox, notesBox, gameNameBox, packageBox;
+
+              @Override
+              protected void onCreate(Bundle b) {
                   super.onCreate(b);
-                  prefs = getSharedPreferences("uf", MODE_PRIVATE);
+                  prefs = getSharedPreferences("studio", MODE_PRIVATE);
                   getWindow().setStatusBarColor(bg);
                   getWindow().setNavigationBarColor(bg);
-                  home();
+                  showHome();
               }
 
               void base() {
-                  ScrollView s = new ScrollView(this);
-                  s.setBackgroundColor(bg);
+                  ScrollView scroll = new ScrollView(this);
+                  scroll.setBackgroundColor(bg);
                   root = new LinearLayout(this);
                   root.setOrientation(LinearLayout.VERTICAL);
                   root.setPadding(36,120,36,150);
                   root.setBackgroundColor(bg);
-                  s.addView(root);
-                  setContentView(s);
+                  scroll.addView(root);
+                  setContentView(scroll);
               }
 
               TextView label(String t, int size) {
@@ -158,6 +155,17 @@ jobs:
                   v.setTextColor(text);
                   v.setGravity(Gravity.CENTER);
                   v.setPadding(0,12,0,12);
+                  return v;
+              }
+
+              TextView box(String t) {
+                  TextView v = label(t,15);
+                  v.setGravity(Gravity.LEFT);
+                  v.setBackgroundColor(card);
+                  v.setPadding(24,24,24,24);
+                  LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(-1,-2);
+                  p.setMargins(0,16,0,0);
+                  v.setLayoutParams(p);
                   return v;
               }
 
@@ -189,205 +197,257 @@ jobs:
                   return b;
               }
 
-              void home() {
+              void showHome() {
                   base();
-                  root.addView(label("UnityForge",34));
-                  root.addView(label("Mobile Unity Template Control Panel",15));
+                  boolean shadowInstalled = isInstalled(shadowPackage);
 
-                  tokenBox = input("GitHub token - paste only inside app", prefs.getString("token",""));
-                  tokenBox.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                  root.addView(label("UnityForge RPG",34));
+                  root.addView(label("Phone command center for 3D RPG games",15));
 
-                  ownerBox = input("GitHub username", prefs.getString("owner","rhoadsnate-gif"));
-                  repoBox = input("Unity game repo name", prefs.getString("repo",""));
-                  workflowBox = input("Unity build workflow file", prefs.getString("workflow","unity-build.yml"));
+                  if (shadowInstalled) {
+                      root.addView(box("✅ Shadow PC detected.\nYou can run Unity from your phone using Shadow."));
+                  } else {
+                      root.addView(box("❌ Shadow PC not detected.\nInstall Shadow PC first so Unity can run on a cloud Windows PC."));
+                  }
 
-                  gameNameBox = input("Game name", prefs.getString("game","My RPG Game"));
-                  packageBox = input("Package name", prefs.getString("pkg","com.orbitpulse.rpg"));
-                  characterBox = input("Character style", prefs.getString("character","male warrior"));
-                  worldBox = input("World style", prefs.getString("world","viking fantasy village"));
-                  notesBox = input("Extra changes", prefs.getString("notes","Add mobile joystick, attack button, OrbitPulse branding, Android safe area."));
+                  Button shadow = btn("Open / Install Shadow PC");
+                  Button project = btn("Project Setup");
+                  Button steps = btn("Baby Steps");
+                  Button links = btn("Open Tools");
+                  Button build = btn("Build Tracker");
+                  Button checklist = btn("RPG Checklist");
 
-                  Button save = btn("Save");
-                  Button check = btn("Load / Check Unity Template");
-                  Button config = btn("Create Game Config");
-                  Button build = btn("Build APK");
-                  Button repo = btn("Open GitHub Repo");
-                  Button actions = btn("Open APK Builds");
-                  Button upload = btn("Upload Files Page");
-                  Button help = btn("Instructions");
+                  root.addView(shadow);
+                  root.addView(project);
+                  root.addView(steps);
+                  root.addView(links);
+                  root.addView(build);
+                  root.addView(checklist);
 
-                  status = label("Ready",14);
+                  shadow.setOnClickListener(v -> openShadow());
+                  project.setOnClickListener(v -> showProjectSetup());
+                  steps.setOnClickListener(v -> showSteps());
+                  links.setOnClickListener(v -> showTools());
+                  build.setOnClickListener(v -> showBuildTracker());
+                  checklist.setOnClickListener(v -> showChecklist());
+              }
+
+              void showProjectSetup() {
+                  base();
+                  root.addView(label("Project Setup",32));
+
+                  gameNameBox = input("Game name", prefs.getString("gameName","Viking Shadow RPG"));
+                  packageBox = input("Package name", prefs.getString("package","com.orbitpulse.vikingrpg"));
+                  repoBox = input("GitHub repo link", prefs.getString("repo","https://github.com/rhoadsnate-gif/viking-rpg-game"));
+                  unityBox = input("Unity version", prefs.getString("unity","2022.3 LTS"));
+                  rpgKitBox = input("RPG kit link", prefs.getString("rpgKit","Paste your $70 RPG kit link here"));
+                  worldPackBox = input("World pack link", prefs.getString("worldPack","Paste your $80 Viking world pack link here"));
+                  notesBox = input("Game notes", prefs.getString("notes","Remove girl character. Add male Viking warrior. Add joystick, attack, health, inventory, quests."));
+
+                  Button save = btn("Save Project");
+                  Button openRepo = btn("Open GitHub Repo");
+                  Button back = btn("Back");
 
                   root.addView(save);
-                  root.addView(check);
-                  root.addView(config);
-                  root.addView(build);
-                  root.addView(repo);
-                  root.addView(actions);
-                  root.addView(upload);
-                  root.addView(help);
-                  root.addView(status);
+                  root.addView(openRepo);
+                  root.addView(back);
 
-                  save.setOnClickListener(v -> save());
-                  check.setOnClickListener(v -> checkUnityProject());
-                  config.setOnClickListener(v -> updateConfig());
-                  build.setOnClickListener(v -> triggerBuild());
-                  repo.setOnClickListener(v -> open("https://github.com/"+owner()+"/"+repo()));
-                  actions.setOnClickListener(v -> open("https://github.com/"+owner()+"/"+repo()+"/actions"));
-                  upload.setOnClickListener(v -> open("https://github.com/"+owner()+"/"+repo()+"/upload/main"));
-                  help.setOnClickListener(v -> help());
+                  save.setOnClickListener(v -> saveProject());
+                  openRepo.setOnClickListener(v -> open(repoBox.getText().toString().trim()));
+                  back.setOnClickListener(v -> showHome());
               }
 
-              void help() {
+              void saveProject() {
+                  prefs.edit()
+                      .putString("gameName", gameNameBox.getText().toString())
+                      .putString("package", packageBox.getText().toString())
+                      .putString("repo", repoBox.getText().toString())
+                      .putString("unity", unityBox.getText().toString())
+                      .putString("rpgKit", rpgKitBox.getText().toString())
+                      .putString("worldPack", worldPackBox.getText().toString())
+                      .putString("notes", notesBox.getText().toString())
+                      .apply();
+                  toast("Project saved");
+              }
+
+              void showSteps() {
                   base();
-                  root.addView(label("How It Works",30));
-                  root.addView(label("1. Upload Unity project to GitHub\n2. Open UnityForge\n3. Enter repo name\n4. Tap Load / Check\n5. Tap Create Game Config\n6. Tap Build APK",16));
-                  root.addView(label("A real Unity project must include:\nAssets/\nPackages/\nProjectSettings/",15));
-                  root.addView(label("This app edits files and starts builds. It does not replace the full Unity Editor.",14));
+                  root.addView(label("Baby Steps",32));
+
+                  root.addView(box("1. Tap Open / Install Shadow PC.\n\nShadow PC gives your phone a real Windows computer."));
+                  root.addView(box("2. Inside Shadow PC, install Unity Hub.\n\nGo to unity.com/download."));
+                  root.addView(box("3. Install Unity Editor.\n\nUse the version required by your RPG kit."));
+                  root.addView(box("4. Buy/download your RPG kit in Unity Asset Store.\n\nImport it into a Unity project."));
+                  root.addView(box("5. Buy/download your Viking world pack.\n\nImport it after the RPG kit."));
+                  root.addView(box("6. Press Play in Unity.\n\nMake sure the template works before changing anything."));
+                  root.addView(box("7. Replace the girl character.\n\nUse a male warrior / Viking character."));
+                  root.addView(box("8. Add Android mobile controls.\n\nJoystick, attack button, jump button, camera drag."));
+                  root.addView(box("9. Save project to GitHub.\n\nUse your repo from Project Setup."));
+                  root.addView(box("10. Build APK.\n\nUse Unity Build Settings or GitHub Actions."));
+                  root.addView(box("11. Download APK to your phone.\n\nInstall and test."));
+                  root.addView(box("12. Fix, rebuild, test again.\n\nThis is how real games get made."));
+
+                  Button shadow = btn("Open Shadow PC");
+                  Button back = btn("Back");
+                  root.addView(shadow);
+                  root.addView(back);
+                  shadow.setOnClickListener(v -> openShadow());
+                  back.setOnClickListener(v -> showHome());
+              }
+
+              void showTools() {
+                  base();
+                  root.addView(label("Open Tools",32));
+
+                  Button shadow = btn("Shadow PC");
+                  Button unity = btn("Unity Download");
+                  Button asset = btn("Unity Asset Store");
+                  Button github = btn("My GitHub");
+                  Button repo = btn("Saved Game Repo");
+                  Button builds = btn("APK Builds");
+                  Button back = btn("Back");
+
+                  root.addView(shadow);
+                  root.addView(unity);
+                  root.addView(asset);
+                  root.addView(github);
+                  root.addView(repo);
+                  root.addView(builds);
+                  root.addView(back);
+
+                  shadow.setOnClickListener(v -> openShadow());
+                  unity.setOnClickListener(v -> open("https://unity.com/download"));
+                  asset.setOnClickListener(v -> open("https://assetstore.unity.com"));
+                  github.setOnClickListener(v -> open("https://github.com/rhoadsnate-gif"));
+                  repo.setOnClickListener(v -> open(prefs.getString("repo","https://github.com/rhoadsnate-gif")));
+                  builds.setOnClickListener(v -> open(prefs.getString("repo","https://github.com/rhoadsnate-gif") + "/actions"));
+                  back.setOnClickListener(v -> showHome());
+              }
+
+              void showBuildTracker() {
+                  base();
+                  root.addView(label("Build Tracker",32));
+
+                  root.addView(box(
+                      "Saved Game:\n" + prefs.getString("gameName","Viking Shadow RPG") +
+                      "\n\nPackage:\n" + prefs.getString("package","com.orbitpulse.vikingrpg") +
+                      "\n\nUnity:\n" + prefs.getString("unity","2022.3 LTS") +
+                      "\n\nRepo:\n" + prefs.getString("repo","No repo saved")
+                  ));
+
+                  root.addView(box(
+                      "Build order:\n\n" +
+                      "☐ Shadow PC works\n" +
+                      "☐ Unity Hub installed\n" +
+                      "☐ RPG kit imported\n" +
+                      "☐ Viking pack imported\n" +
+                      "☐ Girl character removed\n" +
+                      "☐ Mobile controls added\n" +
+                      "☐ Android build settings done\n" +
+                      "☐ Project saved to GitHub\n" +
+                      "☐ APK built\n" +
+                      "☐ APK tested on phone"
+                  ));
+
+                  root.addView(box(
+                      "Notes:\n" + prefs.getString("notes","No notes saved")
+                  ));
+
+                  Button openBuilds = btn("Open APK Builds");
+                  Button openRepo = btn("Open Repo");
+                  Button back = btn("Back");
+
+                  root.addView(openBuilds);
+                  root.addView(openRepo);
+                  root.addView(back);
+
+                  openBuilds.setOnClickListener(v -> open(prefs.getString("repo","https://github.com/rhoadsnate-gif") + "/actions"));
+                  openRepo.setOnClickListener(v -> open(prefs.getString("repo","https://github.com/rhoadsnate-gif")));
+                  back.setOnClickListener(v -> showHome());
+              }
+
+              void showChecklist() {
+                  base();
+                  root.addView(label("RPG Checklist",32));
+
+                  root.addView(box(
+                      "Required:\n\n" +
+                      "✅ Shadow PC\n" +
+                      "✅ Unity Hub\n" +
+                      "✅ Unity Editor\n" +
+                      "✅ RPG template\n" +
+                      "✅ 3D world pack\n" +
+                      "✅ GitHub repo\n" +
+                      "✅ Android build support"
+                  ));
+
+                  root.addView(box(
+                      "Game features:\n\n" +
+                      "☐ Male player character\n" +
+                      "☐ Third-person camera\n" +
+                      "☐ Movement\n" +
+                      "☐ Attack\n" +
+                      "☐ Enemies\n" +
+                      "☐ Health bar\n" +
+                      "☐ Inventory\n" +
+                      "☐ Quests\n" +
+                      "☐ Coins/rewards\n" +
+                      "☐ Pause menu\n" +
+                      "☐ Settings menu"
+                  ));
+
+                  root.addView(box(
+                      "Android features:\n\n" +
+                      "☐ Joystick\n" +
+                      "☐ Attack button\n" +
+                      "☐ Jump button\n" +
+                      "☐ Camera drag\n" +
+                      "☐ Safe area for Samsung status bar\n" +
+                      "☐ App icon\n" +
+                      "☐ App name\n" +
+                      "☐ APK test"
+                  ));
+
                   Button back = btn("Back");
                   root.addView(back);
-                  back.setOnClickListener(v -> home());
+                  back.setOnClickListener(v -> showHome());
               }
 
-              void save() {
-                  prefs.edit()
-                      .putString("token", tokenBox.getText().toString().trim())
-                      .putString("owner", ownerBox.getText().toString().trim())
-                      .putString("repo", repoBox.getText().toString().trim())
-                      .putString("workflow", workflowBox.getText().toString().trim())
-                      .putString("game", gameNameBox.getText().toString().trim())
-                      .putString("pkg", packageBox.getText().toString().trim())
-                      .putString("character", characterBox.getText().toString().trim())
-                      .putString("world", worldBox.getText().toString().trim())
-                      .putString("notes", notesBox.getText().toString().trim())
-                      .apply();
-                  toast("Saved");
-              }
-
-              String token(){return tokenBox.getText().toString().trim();}
-              String owner(){return ownerBox.getText().toString().trim();}
-              String repo(){return repoBox.getText().toString().trim();}
-              String workflow(){return workflowBox.getText().toString().trim();}
-
-              void checkUnityProject() {
-                  save();
-                  setStatus("Checking Unity project...");
-                  new Thread(() -> {
-                      try {
-                          boolean assets = exists("Assets");
-                          boolean packages = exists("Packages");
-                          boolean settings = exists("ProjectSettings");
-                          if (assets && packages && settings) ok("Unity template loaded: Assets, Packages, ProjectSettings found.");
-                          else fail("Missing Unity folders. Need Assets, Packages, ProjectSettings.");
-                      } catch(Exception e){ fail(e.getMessage()); }
-                  }).start();
-              }
-
-              boolean exists(String path) throws Exception {
-                  String url = "https://api.github.com/repos/"+owner()+"/"+repo()+"/contents/"+path;
-                  HttpURLConnection c = conn(url,"GET");
-                  return c.getResponseCode()==200;
-              }
-
-              JSONObject configJson() throws Exception {
-                  JSONObject j = new JSONObject();
-                  j.put("gameName", gameNameBox.getText().toString().trim());
-                  j.put("packageName", packageBox.getText().toString().trim());
-                  j.put("character", characterBox.getText().toString().trim());
-                  j.put("world", worldBox.getText().toString().trim());
-                  j.put("notes", notesBox.getText().toString().trim());
-                  j.put("mobileJoystick", true);
-                  j.put("attackButton", true);
-                  j.put("androidSafeArea", true);
-                  j.put("orbitpulseBranding", true);
-                  return j;
-              }
-
-              void updateConfig() {
-                  save();
-                  setStatus("Creating .orbitforge/config.json...");
-                  new Thread(() -> {
-                      try {
-                          String path = ".orbitforge/config.json";
-                          String api = "https://api.github.com/repos/"+owner()+"/"+repo()+"/contents/.orbitforge%2Fconfig.json";
-                          String sha = null;
-
-                          HttpURLConnection get = conn(api,"GET");
-                          if (get.getResponseCode()==200) {
-                              JSONObject old = new JSONObject(read(get.getInputStream()));
-                              sha = old.optString("sha",null);
-                          }
-
-                          JSONObject body = new JSONObject();
-                          body.put("message","Update UnityForge config");
-                          body.put("content", Base64.encodeToString(configJson().toString(2).getBytes("UTF-8"), Base64.NO_WRAP));
-                          if (sha != null) body.put("sha", sha);
-
-                          HttpURLConnection put = conn(api,"PUT");
-                          write(put, body.toString());
-
-                          int code = put.getResponseCode();
-                          if (code==200 || code==201) ok("Game config saved to GitHub.");
-                          else fail("Config error "+code+": "+readError(put));
-                      } catch(Exception e){ fail(e.getMessage()); }
-                  }).start();
-              }
-
-              void triggerBuild() {
-                  save();
-                  setStatus("Starting APK build...");
-                  new Thread(() -> {
-                      try {
-                          String url = "https://api.github.com/repos/"+owner()+"/"+repo()+"/actions/workflows/"+workflow()+"/dispatches";
-                          JSONObject body = new JSONObject();
-                          body.put("ref","main");
-                          HttpURLConnection post = conn(url,"POST");
-                          write(post, body.toString());
-                          int code = post.getResponseCode();
-                          if (code==204) ok("Build started. Open APK Builds.");
-                          else fail("Build start error "+code+": "+readError(post));
-                      } catch(Exception e){ fail(e.getMessage()); }
-                  }).start();
-              }
-
-              HttpURLConnection conn(String u, String m) throws Exception {
-                  URL url = new URL(u);
-                  HttpURLConnection c = (HttpURLConnection)url.openConnection();
-                  c.setRequestMethod(m);
-                  c.setRequestProperty("Accept","application/vnd.github+json");
-                  c.setRequestProperty("Authorization","Bearer "+token());
-                  c.setRequestProperty("X-GitHub-Api-Version","2022-11-28");
-                  if (m.equals("POST") || m.equals("PUT")) {
-                      c.setDoOutput(true);
-                      c.setRequestProperty("Content-Type","application/json");
+              boolean isInstalled(String packageName) {
+                  try {
+                      getPackageManager().getPackageInfo(packageName, 0);
+                      return true;
+                  } catch (PackageManager.NameNotFoundException e) {
+                      return false;
                   }
-                  return c;
               }
 
-              void write(HttpURLConnection c, String d) throws Exception {
-                  OutputStream os = c.getOutputStream();
-                  os.write(d.getBytes("UTF-8"));
-                  os.close();
+              void openShadow() {
+                  if (isInstalled(shadowPackage)) {
+                      Intent launch = getPackageManager().getLaunchIntentForPackage(shadowPackage);
+                      if (launch != null) startActivity(launch);
+                      else open("https://shadow.tech/download");
+                  } else {
+                      open("https://play.google.com/store/search?q=Shadow%20PC&c=apps");
+                  }
               }
 
-              String read(InputStream is) throws Exception {
-                  BufferedReader br = new BufferedReader(new InputStreamReader(is));
-                  StringBuilder sb = new StringBuilder();
-                  String line;
-                  while((line=br.readLine())!=null) sb.append(line).append("\n");
-                  return sb.toString();
+              void open(String url) {
+                  if (url == null || url.trim().length() == 0) {
+                      toast("No link saved");
+                      return;
+                  }
+                  startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
               }
 
-              String readError(HttpURLConnection c) {
-                  try { return read(c.getErrorStream()); } catch(Exception e){ return ""; }
+              void toast(String s) {
+                  Toast.makeText(this,s,Toast.LENGTH_LONG).show();
               }
 
-              void setStatus(String s){ runOnUiThread(() -> status.setText(s)); }
-              void ok(String s){ runOnUiThread(() -> { status.setText(s); toast(s); }); }
-              void fail(String s){ runOnUiThread(() -> { status.setText("Error: "+s); toast("Error"); }); }
-              void toast(String s){ Toast.makeText(this,s,Toast.LENGTH_LONG).show(); }
-              void open(String url){ startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); }
-              @Override public void onBackPressed(){ home(); }
+              @Override
+              public void onBackPressed() {
+                  showHome();
+              }
           }
           EOF
 
@@ -402,5 +462,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: unityforge-mobile-apk
+          name: unityforge-rpg-studio-apk
           path: app/build/outputs/apk/debug/*.apk

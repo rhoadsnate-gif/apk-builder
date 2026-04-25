@@ -20,6 +20,49 @@ jobs:
           version: 4.2.2
           use-dotnet: false
 
+      - name: Create Android export preset
+        run: |
+          cat > export_presets.cfg <<'EOF'
+          [preset.0]
+
+          name="Android"
+          platform="Android"
+          runnable=true
+          dedicated_server=false
+          custom_features=""
+          export_filter="all_resources"
+          include_filter=""
+          exclude_filter=""
+          export_path="build/orderfill-trainer.apk"
+          encryption_include_filters=""
+          encryption_exclude_filters=""
+          encrypt_pck=false
+          encrypt_directory=false
+          script_export_mode=1
+
+          [preset.0.options]
+
+          custom_template/debug=""
+          custom_template/release=""
+          gradle_build/use_gradle_build=false
+          gradle_build/export_format=0
+          gradle_build/min_sdk=""
+          gradle_build/target_sdk=""
+          architectures/armeabi-v7a=true
+          architectures/arm64-v8a=true
+          keystore/debug=""
+          keystore/debug_user=""
+          keystore/debug_password=""
+          keystore/release=""
+          keystore/release_user=""
+          keystore/release_password=""
+          package/unique_name="com.orderfill.trainer"
+          package/name="OrderFill Trainer"
+          package/signed=true
+          package/app_category=2
+          permissions/internet=false
+          EOF
+
       - name: Make build folder
         run: mkdir -p build
 

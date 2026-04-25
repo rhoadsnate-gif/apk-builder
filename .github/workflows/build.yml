@@ -1,0 +1,33 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.2.2
+          use-dotnet: false
+
+      - name: Make build folder
+        run: mkdir -p build
+
+      - name: Build Android APK
+        run: godot --headless --export-debug "Android" build/orderfill-trainer.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: orderfill-trainer-apk
+          path: build/orderfill-trainer.apk
